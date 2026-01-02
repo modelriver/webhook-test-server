@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ModelRiver Webhook Test Server</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .header h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      color: #666;
+      margin-bottom: 15px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5568d3;
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+
+    .auto-refresh {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .auto-refresh input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .webhooks-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .webhook-card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s;
+    }
+
+    .webhook-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .webhook-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .webhook-id {
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .webhook-time {
+      color: #999;
+      font-size: 14px;
+    }
+
+    .webhook-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .info-label {
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .info-value {
+      font-size: 14px;
+      color: #333;
+      font-weight: 500;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status-error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .signature-valid {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .signature-invalid {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .signature-unverified {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .expand-btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+
+    .expand-btn:hover {
+      background: #5568d3;
+    }
+
+    .payload-details {
+      margin-top: 15px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 5px;
+      display: none;
+    }
+
+    .payload-details.expanded {
+      display: block;
+    }
+
+    .payload-json {
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      color: #333;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .empty-state h2 {
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .empty-state p {
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔔 ModelRiver Webhook Test Server</h1>
+      <p>Monitor webhooks received from ModelRiver in real-time</p>
+      <div class="controls">
+        <button class="btn btn-primary" onclick="fetchWebhooks()">🔄 Refresh</button>
+        <button class="btn btn-secondary" onclick="clearWebhooks()">🗑️ Clear History</button>
+        <div class="auto-refresh">
+          <input type="checkbox" id="autoRefresh" onchange="toggleAutoRefresh()">
+          <label for="autoRefresh">Auto-refresh (5s)</label>
+        </div>
+      </div>
+    </div>
+
+    <div id="webhooksList" class="webhooks-list">
+      <div class="empty-state">
+        <h2>No webhooks received yet</h2>
+        <p>Webhooks will appear here when they are received</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let autoRefreshInterval = null;
+
+    async function fetchWebhooks() {
+      try {
+        const response = await fetch('/api/webhooks');
+        const webhooks = await response.json();
+        renderWebhooks(webhooks);
+      } catch (error) {
+        console.error('Error fetching webhooks:', error);
+      }
+    }
+
+    function renderWebhooks(webhooks) {
+      const container = document.getElementById('webhooksList');
+      
+      if (webhooks.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <h2>No webhooks received yet</h2>
+            <p>Webhooks will appear here when they are received</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = webhooks.map((webhook, index) => {
+        const status = webhook.body?.data?.status || 'UNKNOWN';
+        const signatureStatus = webhook.signatureVerified === true ? 'valid' : 
+                                webhook.signatureVerified === false ? 'invalid' : 'unverified';
+        const signatureClass = webhook.signatureVerified === true ? 'signature-valid' : 
+                              webhook.signatureVerified === false ? 'signature-invalid' : 'signature-unverified';
+        const signatureText = webhook.signatureVerified === true ? '✅ Valid' : 
+                             webhook.signatureVerified === false ? '❌ Invalid' : '⚠️ Not Verified';
+
+        return `
+          <div class="webhook-card">
+            <div class="webhook-header">
+              <div>
+                <div class="webhook-id">ID: ${webhook.id || 'N/A'}</div>
+                <div class="webhook-time">Received: ${new Date(webhook.receivedAt).toLocaleString()}</div>
+              </div>
+            </div>
+            <div class="webhook-info">
+              <div class="info-item">
+                <div class="info-label">Channel ID</div>
+                <div class="info-value">${webhook.channel_id || 'N/A'}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Status</div>
+                <div class="info-value">
+                  <span class="status-badge status-${status.toLowerCase()}">${status}</span>
+                </div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Signature</div>
+                <div class="info-value">
+                  <span class="status-badge ${signatureClass}">${signatureText}</span>
+                </div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Timestamp</div>
+                <div class="info-value">${new Date(webhook.timestamp * 1000).toLocaleString()}</div>
+              </div>
+            </div>
+            <button class="expand-btn" onclick="togglePayload(${index})">View Full Payload</button>
+            <div class="payload-details" id="payload-${index}">
+              <div class="payload-json">${JSON.stringify(webhook.body, null, 2)}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function togglePayload(index) {
+      const payload = document.getElementById(`payload-${index}`);
+      payload.classList.toggle('expanded');
+    }
+
+    function clearWebhooks() {
+      if (confirm('Are you sure you want to clear all webhook history?')) {
+        fetch('/api/webhooks', { method: 'DELETE' })
+          .then(() => fetchWebhooks())
+          .catch(err => console.error('Error clearing webhooks:', err));
+      }
+    }
+
+    function toggleAutoRefresh() {
+      const checkbox = document.getElementById('autoRefresh');
+      if (checkbox.checked) {
+        autoRefreshInterval = setInterval(fetchWebhooks, 5000);
+      } else {
+        if (autoRefreshInterval) {
+          clearInterval(autoRefreshInterval);
+          autoRefreshInterval = null;
+        }
+      }
+    }
+
+    // Initial fetch
+    fetchWebhooks();
+
+    // Set up auto-refresh if checkbox is checked on load
+    if (document.getElementById('autoRefresh').checked) {
+      toggleAutoRefresh();
+    }
+  </script>
+</body>
+</html>
+
+
+
+
+
+
