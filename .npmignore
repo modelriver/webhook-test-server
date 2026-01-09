@@ -1,0 +1,11 @@
+# Test files
+**/*.test.js
+*.test.js
+
+# Dev files
+.git
+.gitignore
+
+# OS files
+.DS_Store
+Thumbs.db

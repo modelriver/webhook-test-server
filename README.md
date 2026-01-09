@@ -46,6 +46,20 @@ The server will start on `http://localhost:3001` (or the port specified in `PORT
 
 Open your browser to: `http://localhost:3001`
 
+### 5. Using with ModelRiver CLI (Recommended)
+
+You can use the ModelRiver CLI to forward webhooks from production to your local server without a public URL.
+
+```bash
+# Terminal 1: Start this server
+npm start
+
+
+# Terminal 2: Start forwarding
+modelriver listen --port 3001 --forward --print
+```
+
+## Signature Verification
 ## Signature Verification
 
 The server verifies webhook signatures using HMAC-SHA256. The signature is generated from the `data` field of the payload, not the entire request body.
@@ -85,6 +99,15 @@ POST requests to `/webhook` will be:
 3. Make an async AI request in ModelRiver
 4. Check the web UI at `http://localhost:3001` to see the received webhook
 
+### Running Tests
+
+This project includes a Jest test suite for the signature verification logic.
+
+```bash
+npm test
+```
+
+
 ## Troubleshooting
 
 ### Signature Verification Fails
@@ -104,6 +127,9 @@ POST requests to `/webhook` will be:
 ```bash
 PORT=3002 npm start
 ```
+
+
+
 
 
 
